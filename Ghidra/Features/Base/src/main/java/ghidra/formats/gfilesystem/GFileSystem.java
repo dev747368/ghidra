@@ -15,7 +15,10 @@
  */
 package ghidra.formats.gfilesystem;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Comparator;
 import java.util.List;
 
 import ghidra.app.util.bin.ByteProvider;
@@ -129,6 +132,22 @@ public interface GFileSystem extends Closeable, ExtensionPoint {
 	 */
 	GFile lookup(String path) throws IOException;
 
+	/**
+	 * Retrieves a {@link GFile} from this filesystem based on its full path and filename, using
+	 * the specified name comparison logic (eg. case sensitive vs insensitive).
+	 * <p>
+	 * @param path string path and filename of a file located in this filesystem.  Use 
+	 * {@code null} or "/" to retrieve the root directory
+	 * @param nameComp string comparator used to compare filenames.  Exact matching names will
+	 * not involve the comparator.  Use {@code null} to specify the file system's native comparison
+	 * logic.
+	 * @return {@link GFile} instance of requested file, null if not found.
+	 * @throws IOException if IO error when looking up file.
+	 */
+	default GFile lookup(String path, Comparator<String> nameComp) throws IOException {
+		// for this default impl, ignore the comparator, which will 
+		return lookup(path);
+	}
 	/**
 	 * Returns the file system's root directory.
 	 * <p>

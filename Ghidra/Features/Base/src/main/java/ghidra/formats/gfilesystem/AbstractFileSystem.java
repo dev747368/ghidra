@@ -67,6 +67,11 @@ public abstract class AbstractFileSystem<METADATATYPE> implements GFileSystem {
 	}
 
 	@Override
+	public GFile lookup(String path, Comparator<String> nameComp) throws IOException {
+		return fsIndex.lookup(null, path, nameComp);
+	}
+
+	@Override
 	public GFile getRootDir() {
 		return fsIndex.getRootDir();
 	}

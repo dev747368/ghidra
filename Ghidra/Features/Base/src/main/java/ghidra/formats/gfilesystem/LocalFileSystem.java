@@ -15,11 +15,23 @@
  */
 package ghidra.formats.gfilesystem;
 
-import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.*;
+import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.FILE_TYPE_ATTR;
+import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.MODIFIED_DATE_ATTR;
+import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.NAME_ATTR;
+import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.SIZE_ATTR;
+import static ghidra.formats.gfilesystem.fileinfo.FileAttributeType.SYMLINK_DEST_ATTR;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.collections4.map.ReferenceMap;
 
@@ -28,7 +40,9 @@ import ghidra.app.util.bin.FileByteProvider;
 import ghidra.formats.gfilesystem.annotations.FileSystemInfo;
 import ghidra.formats.gfilesystem.factory.GFileSystemFactory;
 import ghidra.formats.gfilesystem.factory.GFileSystemFactoryIgnore;
-import ghidra.formats.gfilesystem.fileinfo.*;
+import ghidra.formats.gfilesystem.fileinfo.FileAttribute;
+import ghidra.formats.gfilesystem.fileinfo.FileAttributes;
+import ghidra.formats.gfilesystem.fileinfo.FileType;
 import ghidra.framework.OperatingSystem;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
@@ -213,7 +227,12 @@ public class LocalFileSystem implements GFileSystem, GFileHashProvider {
 
 	@Override
 	public GFile lookup(String path) throws IOException {
-		File f = lookupFile(null, path, null);
+		return lookup(path, null);
+	}
+
+	@Override
+	public GFile lookup(String path, Comparator<String> nameComp) throws IOException {
+		File f = lookupFile(null, path, nameComp);
 		return f != null ? GFileImpl.fromPathString(this,
 			FSUtilities.normalizeNativePath(f.getPath()), null, f.isDirectory(), f.length()) : null;
 	}
@@ -323,28 +342,17 @@ public class LocalFileSystem implements GFileSystem, GFileHashProvider {
 			f = f.getAbsoluteFile();
 		}
 		try {
-			if (nameComp == null || f.getParentFile() == null) {
-				// If not using a comparator, or if the requested path is a 
-				// root element (eg "/", or "c:\\"), don't do per-directory-path lookups.
-
-				if (OperatingSystem.CURRENT_OPERATING_SYSTEM == OperatingSystem.WINDOWS) {
+			boolean exists = f.exists();
+			if (nameComp == null || exists) {
+				// If not using a comparator, or if the exact requested path exists
+				if (exists && OperatingSystem.CURRENT_OPERATING_SYSTEM == OperatingSystem.WINDOWS) {
 					// On windows, getCanonicalFile() will return a corrected path using the case of 
 					// the file element on the file system (eg. "c:/users" -> "c:/Users"), if the
 					// element exists.
 					// We don't want to do this on unix-ish file systems as it will follow symlinks
 					f = f.getCanonicalFile();
 				}
-				return FSUtilities.isSymlink(f) || f.exists() ? f : null;
-			}
-
-			// Test the file's path using the name comparator
-			if (f.exists() && baseDir == null) {
-				// try to short-cut by comparing the entire path string 
-				File canonicalFile = f.getCanonicalFile();
-				if (nameComp.compare(path,
-					FSUtilities.normalizeNativePath((canonicalFile.getPath()))) == 0) {
-					return canonicalFile;
-				}
+				return exists || FSUtilities.isSymlink(f) ? f : null;
 			}
 
 			// For path "/subdir/file", pathParts will contain, in reverse order:
@@ -376,19 +384,22 @@ public class LocalFileSystem implements GFileSystem, GFileHashProvider {
 	}
 
 	static File findInDir(File dir, String name, Comparator<String> nameComp) {
+		// exact matches always succeed
+		File exact = new File(dir, name);
+		if (exact.exists()) {
+			return exact;
+		}
+		
 		// Searches for "name" in the list of files found in the directory.
 		// Because a case-insensitive comparator could match on several files in the same directory,
-		// query for all the files before picking a match: either an exact string match, or
-		// if there are several candidates, the first in the list after sorting.
+		// query for all the files before picking a match, if there are several candidates, 
+		// choose the first in the list after sorting.
 		File[] files = dir.listFiles();
 		List<File> candidateMatches = new ArrayList<>();
 		if (files != null) {
 			for (File f : files) {
 				String foundFilename = f.getName();
 				if (nameComp.compare(name, foundFilename) == 0) {
-					if (name.equals(foundFilename)) {
-						return f;
-					}
 					candidateMatches.add(f);
 				}
 			}

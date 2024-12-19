@@ -15,8 +15,11 @@
  */
 package ghidra.formats.gfilesystem;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import ghidra.app.util.bin.ByteProvider;
@@ -155,8 +158,13 @@ public class LocalFileSystemSub implements GFileSystem, GFileHashProvider {
 
 	@Override
 	public GFile lookup(String path) throws IOException {
-		File f = LocalFileSystem.lookupFile(localfsRootDir, path, null);
-		if ( f == null ) {
+		return lookup(path, null);
+	}
+
+	@Override
+	public GFile lookup(String path, Comparator<String> nameComp) throws IOException {
+		File f = LocalFileSystem.lookupFile(localfsRootDir, path, nameComp);
+		if (f == null) {
 			return null;
 		}
 		GFile result = getGFile(f);

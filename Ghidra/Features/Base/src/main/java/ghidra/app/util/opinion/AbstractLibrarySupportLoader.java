@@ -19,7 +19,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,11 +39,29 @@ import ghidra.app.util.Option;
 import ghidra.app.util.OptionUtils;
 import ghidra.app.util.bin.ByteProvider;
 import ghidra.app.util.bin.FileBytesProvider;
-import ghidra.app.util.importer.*;
-import ghidra.formats.gfilesystem.*;
-import ghidra.framework.model.*;
+import ghidra.app.util.importer.DomainFolderOption;
+import ghidra.app.util.importer.LibrarySearchPathDummyOption;
+import ghidra.app.util.importer.LibrarySearchPathManager;
+import ghidra.app.util.importer.MessageLog;
+import ghidra.formats.gfilesystem.FSRL;
+import ghidra.formats.gfilesystem.FSUtilities;
+import ghidra.formats.gfilesystem.FileSystemRef;
+import ghidra.formats.gfilesystem.FileSystemService;
+import ghidra.formats.gfilesystem.GFile;
+import ghidra.formats.gfilesystem.GFileLocal;
+import ghidra.formats.gfilesystem.GFileSystem;
+import ghidra.formats.gfilesystem.RefdFile;
+import ghidra.framework.model.DomainFile;
+import ghidra.framework.model.DomainFolder;
+import ghidra.framework.model.DomainObject;
+import ghidra.framework.model.Project;
+import ghidra.framework.model.ProjectData;
 import ghidra.program.model.address.Address;
-import ghidra.program.model.lang.*;
+import ghidra.program.model.lang.CompilerSpec;
+import ghidra.program.model.lang.CompilerSpecID;
+import ghidra.program.model.lang.Language;
+import ghidra.program.model.lang.LanguageCompilerSpecPair;
+import ghidra.program.model.lang.LanguageID;
 import ghidra.program.model.listing.Library;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.symbol.ExternalManager;
@@ -1181,27 +1208,20 @@ public abstract class AbstractLibrarySupportLoader extends AbstractProgramLoader
 	 */
 	protected FSRL resolveLibraryFile(GFileSystem fs, Path libraryParentPath, String libraryName)
 			throws IOException {
-		GFile libraryParentDir = fs.lookup(
-			libraryParentPath != null ? FilenameUtils.separatorsToUnix(libraryParentPath.toString())
-					: null);
-		boolean compareWithoutExtension = isOptionalLibraryFilenameExtensions() &&
-			FilenameUtils.getExtension(libraryName).equals("");
-		if (libraryParentDir != null) {
-			Comparator<String> libNameComparator = getLibraryNameComparator();
-			for (GFile file : fs.getListing(libraryParentDir)) {
-				if (file.isDirectory()) {
-					continue;
-				}
-				String compareName = file.getName();
-				if (compareWithoutExtension) {
-					compareName = FilenameUtils.getBaseName(compareName);
-				}
-				if (libNameComparator.compare(libraryName, compareName) == 0) {
-					return file.getFSRL();
-				}
-			}
-		}
-		return null;
+		String lpp = libraryParentPath != null 
+				? FilenameUtils.separatorsToUnix(libraryParentPath.toString())
+				: null;
+		String targetPath = FSUtilities.appendPath(lpp, libraryName);
+
+		Comparator<String> baseNameComp = getLibraryNameComparator();
+		Comparator<String> nameComp = isOptionalLibraryFilenameExtensions() &&
+			FilenameUtils.getExtension(libraryName).isEmpty()
+					? (s1, s2) -> baseNameComp.compare(FilenameUtils.getBaseName(s1),
+						FilenameUtils.getBaseName(s2))
+					: baseNameComp;
+
+		GFile foundFile = fs.lookup(targetPath, nameComp);
+		return foundFile != null ? foundFile.getFSRL() : null;
 	}
 
 	/**
