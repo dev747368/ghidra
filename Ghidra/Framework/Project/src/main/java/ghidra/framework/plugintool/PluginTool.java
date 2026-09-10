@@ -1613,6 +1613,15 @@ public abstract class PluginTool extends AbstractDockingTool {
 		return policy.getComponentBefore(window, component);
 	}
 
+	@Override
+	public String toString() {
+		String title = fullName;
+		if (subTitle != null) {
+			title += ": " + subTitle;
+		}
+		return title;
+	}
+
 //==================================================================================================
 // Inner Classes
 //==================================================================================================

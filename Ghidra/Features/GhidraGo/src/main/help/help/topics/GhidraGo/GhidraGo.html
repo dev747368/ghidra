@@ -58,7 +58,7 @@ body {
 	<p>
 		When a GhidraURL is selected, GhidraGo will startup Ghidra if it isn't already running as 
 		well as prompt to login to the multi-user project if necessary. The program is displayed in 
-		the default tool, usually the codebrowser, and can be configured to re-use an open default 
+		the default tool, usually the CodeBrowser, and can be configured to re-use an open default 
 		tool or to use a new default tool. The GhidraURL must currently be locating a DomainFile 
 		that is either in a Remote, Shared project, or a local project.
 	</p>
@@ -67,10 +67,6 @@ body {
 		the Ghidra project manager, and the configuration of the default handling for the ghidraURL 
 		within the user environment. The ghidraURL is sent as the first and only parameter to the 
 		ghidraGo command line interface.
-	</p>
-	<p>
-		GhidraGo passes information through a simple filesystem mechanism vice an open port for 
-		security and simplicity. GhidraGo works on Windows, Linux, and macOS.
 	</p>
 	<p>
 		<p>GhidraURL's have the format:</p>
@@ -103,7 +99,7 @@ body {
 <div>
 	<ol>
 		<li>Start Ghidra</li>
-		<li>Choose File &gt; Configuration in the Project Window (not the Codebrowser Window)</li>
+		<li>Choose File &gt; Configuration in the Project Window (not the CodeBrowser Window)</li>
 		<li>Click the Plug Icon in the upper right to display all plugins</li>
 		<li>Search for GhidraGoPlugin and select it</li>
 		<li>Press OK</li>
@@ -136,7 +132,7 @@ body {
 			<li>Right click HKEY_CLASSES_ROOT then New &gt; Key</li>
 			<li>Name the key "ghidra"</li>
 			<li>Right Click ghidra &gt; New &gt; String Value and add "URL Protocol" without a value</li>
-			<li>Right Click ghidra &gt; New &gt; Key and create the heiarchy ghidra/shell/open/command</li>
+			<li>Right Click ghidra &gt; New &gt; Key and create the hierarchy ghidra/shell/open/command</li>
 			<li>Inside command change (Default) to the path where ghidraGo is located followed by 
 				a "%1". For Example:</li>
 			<br />
@@ -216,18 +212,5 @@ body {
   
 <div style="border-top: 4px double; margin-top: 1em; padding-top: 1em;"> </div>
 <address></address>
-Last modified: Oct 26 2023
-</body> </html>
-
-<style>
-
-table, td {
-border: 1px solid black;
-}
-
-td {
-padding: 15px;
-text-align: center;
-}
-
-</style>
+Last modified: Oct 5 2026
+</body></html>

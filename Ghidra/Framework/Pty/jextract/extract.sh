@@ -27,7 +27,7 @@
 
 ~/bin/jextract-25/bin/jextract \
   --output ../src/main/java \
-  --target-package org.unix.x \
+  --target-package org.unix \
   "<sys/ioctl.h>" \
   --include-function ioctl \
   --include-struct winsize
@@ -65,3 +65,9 @@
   --include-function read \
   --include-function setsid \
   --include-function write
+  
+~/bin/jextract-25/bin/jextract \
+  --output ../src/main/java \
+  --target-package org.unix \
+  "<sys/stat.h>" \
+  --include-function mkfifo

@@ -17,17 +17,11 @@
 
 package com.microsoft.win32;
 
-import java.lang.invoke.*;
 import java.lang.foreign.*;
-import java.nio.ByteOrder;
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import java.lang.foreign.ValueLayout.OfInt;
+import java.lang.invoke.MethodHandle;
 
 import ghidra.pty.windows.Win32Err;
-
-import static java.lang.foreign.ValueLayout.*;
-import static java.lang.foreign.MemoryLayout.PathElement.*;
 
 public class win32_h extends win32_h$shared {
 
@@ -40,6 +34,60 @@ public class win32_h extends win32_h$shared {
             .or(SymbolLookup.loaderLookup())
             .or(Linker.nativeLinker().defaultLookup());
 
+    private static final int OPEN_EXISTING = (int)3L;
+    /**
+     * {@snippet lang=c :
+     * #define OPEN_EXISTING 3
+     * }
+     */
+    public static int OPEN_EXISTING() {
+        return OPEN_EXISTING;
+    }
+    private static final int PIPE_ACCESS_DUPLEX = (int)3L;
+    /**
+     * {@snippet lang=c :
+     * #define PIPE_ACCESS_DUPLEX 3
+     * }
+     */
+    public static int PIPE_ACCESS_DUPLEX() {
+        return PIPE_ACCESS_DUPLEX;
+    }
+    private static final int PIPE_WAIT = (int)0L;
+    /**
+     * {@snippet lang=c :
+     * #define PIPE_WAIT 0
+     * }
+     */
+    public static int PIPE_WAIT() {
+        return PIPE_WAIT;
+    }
+    private static final int PIPE_READMODE_MESSAGE = (int)2L;
+    /**
+     * {@snippet lang=c :
+     * #define PIPE_READMODE_MESSAGE 2
+     * }
+     */
+    public static int PIPE_READMODE_MESSAGE() {
+        return PIPE_READMODE_MESSAGE;
+    }
+    private static final int PIPE_TYPE_MESSAGE = (int)4L;
+    /**
+     * {@snippet lang=c :
+     * #define PIPE_TYPE_MESSAGE 4
+     * }
+     */
+    public static int PIPE_TYPE_MESSAGE() {
+        return PIPE_TYPE_MESSAGE;
+    }
+    private static final int PIPE_UNLIMITED_INSTANCES = (int)255L;
+    /**
+     * {@snippet lang=c :
+     * #define PIPE_UNLIMITED_INSTANCES 255
+     * }
+     */
+    public static int PIPE_UNLIMITED_INSTANCES() {
+        return PIPE_UNLIMITED_INSTANCES;
+    }
     private static final int CREATE_UNICODE_ENVIRONMENT = (int)1024L;
     /**
      * {@snippet lang=c :
@@ -445,6 +493,79 @@ public class win32_h extends win32_h$shared {
         }
     }
 
+	private static class CreateNamedPipeW {
+		public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+			win32_h.C_POINTER,
+			win32_h.C_POINTER,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_POINTER);
+
+		public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("CreateNamedPipeW");
+
+		public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC, Win32Err.OPT_CAPTURE_LASTERROR);
+	}
+
+	/**
+	 * Function descriptor for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateNamedPipeW(LPCWSTR lpName, DWORD dwOpenMode, DWORD dwPipeMode, DWORD nMaxInstances, DWORD nOutBufferSize, DWORD nInBufferSize, DWORD nDefaultTimeOut, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
+	 * }
+	 */
+	public static FunctionDescriptor CreateNamedPipeW$descriptor() {
+		return CreateNamedPipeW.DESC;
+	}
+
+	/**
+	 * Downcall method handle for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateNamedPipeW(LPCWSTR lpName, DWORD dwOpenMode, DWORD dwPipeMode, DWORD nMaxInstances, DWORD nOutBufferSize, DWORD nInBufferSize, DWORD nDefaultTimeOut, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
+	 * }
+	 */
+	public static MethodHandle CreateNamedPipeW$handle() {
+		return CreateNamedPipeW.HANDLE;
+	}
+
+	/**
+	 * Address for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateNamedPipeW(LPCWSTR lpName, DWORD dwOpenMode, DWORD dwPipeMode, DWORD nMaxInstances, DWORD nOutBufferSize, DWORD nInBufferSize, DWORD nDefaultTimeOut, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
+	 * }
+	 */
+	public static MemorySegment CreateNamedPipeW$address() {
+		return CreateNamedPipeW.ADDR;
+	}
+
+	/**
+	 * {@snippet lang=c :
+	 * HANDLE CreateNamedPipeW(LPCWSTR lpName, DWORD dwOpenMode, DWORD dwPipeMode, DWORD nMaxInstances, DWORD nOutBufferSize, DWORD nInBufferSize, DWORD nDefaultTimeOut, LPSECURITY_ATTRIBUTES lpSecurityAttributes)
+	 * }
+	 */
+	public static MemorySegment CreateNamedPipeW(MemorySegment cs, MemorySegment lpName,
+			int dwOpenMode, int dwPipeMode, int nMaxInstances, int nOutBufferSize,
+			int nInBufferSize, int nDefaultTimeOut, MemorySegment lpSecurityAttributes) {
+		var mh$ = CreateNamedPipeW.HANDLE;
+		try {
+			if (TRACE_DOWNCALLS) {
+				traceDowncall("CreateNamedPipeW", lpName, dwOpenMode, dwPipeMode, nMaxInstances,
+					nOutBufferSize, nInBufferSize, nDefaultTimeOut, lpSecurityAttributes);
+			}
+			return (MemorySegment) mh$.invokeExact(cs, lpName, dwOpenMode, dwPipeMode,
+				nMaxInstances, nOutBufferSize, nInBufferSize, nDefaultTimeOut,
+				lpSecurityAttributes);
+		}
+		catch (Error | RuntimeException ex) {
+			throw ex;
+		}
+		catch (Throwable ex$) {
+			throw new AssertionError("should not reach here", ex$);
+		}
+	}
+
     private static class ConnectNamedPipe {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             win32_h.C_INT,
@@ -506,6 +627,270 @@ public class win32_h extends win32_h$shared {
         }
     }
 
+	private static class CreateFileW {
+		public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+			win32_h.C_POINTER,
+			win32_h.C_POINTER,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_POINTER,
+			win32_h.C_LONG,
+			win32_h.C_LONG,
+			win32_h.C_POINTER);
+
+		public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("CreateFileW");
+
+		public static final MethodHandle HANDLE =
+			Linker.nativeLinker().downcallHandle(ADDR, DESC, Win32Err.OPT_CAPTURE_LASTERROR);
+	}
+
+	/**
+	 * Function descriptor for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+	 * }
+	 */
+	public static FunctionDescriptor CreateFileW$descriptor() {
+		return CreateFileW.DESC;
+	}
+
+	/**
+	 * Downcall method handle for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+	 * }
+	 */
+	public static MethodHandle CreateFileW$handle() {
+		return CreateFileW.HANDLE;
+	}
+
+	/**
+	 * Address for:
+	 * {@snippet lang=c :
+	 * HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+	 * }
+	 */
+	public static MemorySegment CreateFileW$address() {
+		return CreateFileW.ADDR;
+	}
+
+	/**
+	 * {@snippet lang=c :
+	 * HANDLE CreateFileW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+	 * }
+	 */
+	public static MemorySegment CreateFileW(MemorySegment cs, MemorySegment lpFileName,
+			int dwDesiredAccess, int dwShareMode, MemorySegment lpSecurityAttributes,
+			int dwCreationDisposition, int dwFlagsAndAttributes, MemorySegment hTemplateFile) {
+		var mh$ = CreateFileW.HANDLE;
+		try {
+			if (TRACE_DOWNCALLS) {
+				traceDowncall("CreateFileW", lpFileName, dwDesiredAccess, dwShareMode,
+					lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
+					hTemplateFile);
+			}
+			return (MemorySegment) mh$.invokeExact(cs, lpFileName, dwDesiredAccess, dwShareMode,
+				lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+		}
+		catch (Error | RuntimeException ex) {
+			throw ex;
+		}
+		catch (Throwable ex$) {
+			throw new AssertionError("should not reach here", ex$);
+		}
+	}
+
+    private static class DisconnectNamedPipe {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            win32_h.C_INT,
+            win32_h.C_POINTER
+        );
+
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("DisconnectNamedPipe");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC, Win32Err.OPT_CAPTURE_LASTERROR);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * BOOL DisconnectNamedPipe(HANDLE hNamedPipe)
+     * }
+     */
+    public static FunctionDescriptor DisconnectNamedPipe$descriptor() {
+        return DisconnectNamedPipe.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * BOOL DisconnectNamedPipe(HANDLE hNamedPipe)
+     * }
+     */
+    public static MethodHandle DisconnectNamedPipe$handle() {
+        return DisconnectNamedPipe.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * BOOL DisconnectNamedPipe(HANDLE hNamedPipe)
+     * }
+     */
+    public static MemorySegment DisconnectNamedPipe$address() {
+        return DisconnectNamedPipe.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * BOOL DisconnectNamedPipe(HANDLE hNamedPipe)
+     * }
+     */
+    public static int DisconnectNamedPipe(MemorySegment cs, MemorySegment hNamedPipe) {
+        var mh$ = DisconnectNamedPipe.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("DisconnectNamedPipe", hNamedPipe);
+            }
+            return (int)mh$.invokeExact(cs, hNamedPipe);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    
+	private static class SetNamedPipeHandleState {
+		public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+			win32_h.C_INT,
+			win32_h.C_POINTER,
+			win32_h.C_POINTER,
+			win32_h.C_POINTER,
+			win32_h.C_POINTER);
+
+		public static final MemorySegment ADDR =
+			SYMBOL_LOOKUP.findOrThrow("SetNamedPipeHandleState");
+
+		public static final MethodHandle HANDLE =
+			Linker.nativeLinker().downcallHandle(ADDR, DESC, Win32Err.OPT_CAPTURE_LASTERROR);
+	}
+
+	/**
+	 * Function descriptor for:
+	 * {@snippet lang=c :
+	 * BOOL SetNamedPipeHandleState(HANDLE hNamedPipe, LPDWORD lpMode, LPDWORD lpMaxCollectionCount, LPDWORD lpCollectDataTimeout)
+	 * }
+	 */
+	public static FunctionDescriptor SetNamedPipeHandleState$descriptor() {
+		return SetNamedPipeHandleState.DESC;
+	}
+
+	/**
+	 * Downcall method handle for:
+	 * {@snippet lang=c :
+	 * BOOL SetNamedPipeHandleState(HANDLE hNamedPipe, LPDWORD lpMode, LPDWORD lpMaxCollectionCount, LPDWORD lpCollectDataTimeout)
+	 * }
+	 */
+	public static MethodHandle SetNamedPipeHandleState$handle() {
+		return SetNamedPipeHandleState.HANDLE;
+	}
+
+	/**
+	 * Address for:
+	 * {@snippet lang=c :
+	 * BOOL SetNamedPipeHandleState(HANDLE hNamedPipe, LPDWORD lpMode, LPDWORD lpMaxCollectionCount, LPDWORD lpCollectDataTimeout)
+	 * }
+	 */
+	public static MemorySegment SetNamedPipeHandleState$address() {
+		return SetNamedPipeHandleState.ADDR;
+	}
+
+	/**
+	 * {@snippet lang=c :
+	 * BOOL SetNamedPipeHandleState(HANDLE hNamedPipe, LPDWORD lpMode, LPDWORD lpMaxCollectionCount, LPDWORD lpCollectDataTimeout)
+	 * }
+	 */
+	public static int SetNamedPipeHandleState(MemorySegment cs, MemorySegment hNamedPipe,
+			MemorySegment lpMode, MemorySegment lpMaxCollectionCount,
+			MemorySegment lpCollectDataTimeout) {
+		var mh$ = SetNamedPipeHandleState.HANDLE;
+		try {
+			if (TRACE_DOWNCALLS) {
+				traceDowncall("SetNamedPipeHandleState", hNamedPipe, lpMode, lpMaxCollectionCount,
+					lpCollectDataTimeout);
+			}
+			return (int) mh$.invokeExact(cs, hNamedPipe, lpMode, lpMaxCollectionCount,
+				lpCollectDataTimeout);
+		}
+		catch (Error | RuntimeException ex) {
+			throw ex;
+		}
+		catch (Throwable ex$) {
+			throw new AssertionError("should not reach here", ex$);
+		}
+	}
+
+    private static class WaitNamedPipeW {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            win32_h.C_INT,
+            win32_h.C_POINTER,
+            win32_h.C_LONG
+        );
+
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("WaitNamedPipeW");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC, Win32Err.OPT_CAPTURE_LASTERROR);
+    }
+
+    /**
+     * Function descriptor for:
+     * {@snippet lang=c :
+     * BOOL WaitNamedPipeW(LPCWSTR lpNamedPipeName, DWORD nTimeOut)
+     * }
+     */
+    public static FunctionDescriptor WaitNamedPipeW$descriptor() {
+        return WaitNamedPipeW.DESC;
+    }
+
+    /**
+     * Downcall method handle for:
+     * {@snippet lang=c :
+     * BOOL WaitNamedPipeW(LPCWSTR lpNamedPipeName, DWORD nTimeOut)
+     * }
+     */
+    public static MethodHandle WaitNamedPipeW$handle() {
+        return WaitNamedPipeW.HANDLE;
+    }
+
+    /**
+     * Address for:
+     * {@snippet lang=c :
+     * BOOL WaitNamedPipeW(LPCWSTR lpNamedPipeName, DWORD nTimeOut)
+     * }
+     */
+    public static MemorySegment WaitNamedPipeW$address() {
+        return WaitNamedPipeW.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * BOOL WaitNamedPipeW(LPCWSTR lpNamedPipeName, DWORD nTimeOut)
+     * }
+     */
+    public static int WaitNamedPipeW(MemorySegment cs, MemorySegment lpNamedPipeName, int nTimeOut) {
+        var mh$ = WaitNamedPipeW.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("WaitNamedPipeW", lpNamedPipeName, nTimeOut);
+            }
+            return (int)mh$.invokeExact(cs, lpNamedPipeName, nTimeOut);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+    
     private static class WaitForSingleObject {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
             win32_h.C_LONG,
@@ -1318,6 +1703,17 @@ public class win32_h extends win32_h$shared {
            throw new AssertionError("should not reach here", ex$);
         }
     }
+
+	private static final int GENERIC_WRITE = (int) 1073741824L;
+
+	/**
+	 * {@snippet lang=c :
+	 * #define GENERIC_WRITE 1073741824
+	 * }
+	 */
+	public static int GENERIC_WRITE() {
+		return GENERIC_WRITE;
+	}
     private static final int STILL_ACTIVE = (int)259L;
     /**
      * {@snippet lang=c :
@@ -1327,6 +1723,20 @@ public class win32_h extends win32_h$shared {
     public static int STILL_ACTIVE() {
         return STILL_ACTIVE;
     }
+
+	public static final long INVALID_HANDLE_VALUE_RAW = -1L;
+
+//	private static final MemorySegment INVALID_HANDLE_VALUE = MemorySegment.ofAddress(-1L);
+//
+//	/**
+//	 * {@snippet lang=c :
+//	 * #define INVALID_HANDLE_VALUE (void*) -1
+//	 * }
+//	 */
+//	public static MemorySegment INVALID_HANDLE_VALUE() {
+//		return INVALID_HANDLE_VALUE;
+//	}
+
     private static final int WAIT_FAILED = (int)4294967295L;
     /**
      * {@snippet lang=c :
@@ -1363,6 +1773,17 @@ public class win32_h extends win32_h$shared {
     public static int PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE() {
         return PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE;
     }
+
+	private static final int ERROR_INVALID_HANDLE = (int) 6L;
+
+	/**
+	 * {@snippet lang=c :
+	 * #define ERROR_INVALID_HANDLE 6
+	 * }
+	 */
+	public static int ERROR_INVALID_HANDLE() {
+		return ERROR_INVALID_HANDLE;
+	}
     private static final int ERROR_BROKEN_PIPE = (int)109L;
     /**
      * {@snippet lang=c :
@@ -1372,6 +1793,28 @@ public class win32_h extends win32_h$shared {
     public static int ERROR_BROKEN_PIPE() {
         return ERROR_BROKEN_PIPE;
     }
+
+	private static final int ERROR_SEM_TIMEOUT = (int) 121L;
+
+	/**
+	 * {@snippet lang=c :
+	 * #define ERROR_SEM_TIMEOUT 121
+	 * }
+	 */
+	public static int ERROR_SEM_TIMEOUT() {
+		return ERROR_SEM_TIMEOUT;
+	}
+
+	private static final int ERROR_NO_DATA = (int) 232L;
+
+	/**
+	 * {@snippet lang=c :
+	 * #define ERROR_NO_DATA 232
+	 * }
+	 */
+	public static int ERROR_NO_DATA() {
+		return ERROR_NO_DATA;
+	}
     private static final int WAIT_TIMEOUT = (int)258L;
     /**
      * {@snippet lang=c :

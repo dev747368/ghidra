@@ -321,7 +321,7 @@ public class FrontEndPlugin extends Plugin
 		return frontEndProvider;
 	}
 
-	FrontEndTool getFrontEndTool() {
+	public FrontEndTool getFrontEndTool() {
 		return (FrontEndTool) tool;
 	}
 
