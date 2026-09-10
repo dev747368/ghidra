@@ -111,7 +111,7 @@ public class DefaultLocalGhidraProtocolConnector extends GhidraProtocolConnector
 	@Override
 	public StatusCode connect(boolean readOnlyAccess) throws IOException {
 		this.readOnly = readOnlyAccess;
-		if (!localStorageLocator.exists()) {
+		if (localStorageLocator == null || !localStorageLocator.exists()) {
 			statusCode = StatusCode.NOT_FOUND;
 		}
 		else {

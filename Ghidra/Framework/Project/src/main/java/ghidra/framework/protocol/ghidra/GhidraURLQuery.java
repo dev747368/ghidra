@@ -201,6 +201,7 @@ public class GhidraURLQuery {
 						"Access denied by Server Allow List: " + getGhidraUrlDetail(ghidraUrl));
 					break;
 
+				case null:
 				case UNAVAILABLE:
 					generatedErr =
 						new IOException("Server connection error occured (see log files): " +

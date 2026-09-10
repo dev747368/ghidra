@@ -25,10 +25,12 @@ C:\Software\jextract-25\bin\jextract ^
   --include-function CloseHandle ^
   --include-function ClosePseudoConsole ^
   --include-function ConnectNamedPipe ^
+  --include-function CreateNamedPipe ^
   --include-function CreatePipe ^
   --include-function CreateJobObjectW ^
   --include-function CreateProcessW ^
   --include-function CreatePseudoConsole ^
+  --include-function DisconnectNamedPipe ^
   --include-function FlushFileBuffers ^
   --include-function FormatMessageW ^
   --include-function GetExitCodeProcess ^
@@ -39,6 +41,7 @@ C:\Software\jextract-25\bin\jextract ^
   --include-function TerminateJobObject ^
   --include-function UpdateProcThreadAttribute ^
   --include-function WaitForSingleObject ^
+  --include-function WaitNamedPipe ^
   --include-function WriteFile ^
   --include-struct _COORD ^
   --include-struct _PROCESS_INFORMATION ^
@@ -67,3 +70,12 @@ C:\Software\jextract-25\bin\jextract ^
   --include-constant WAIT_OBJECT_0 ^
   --include-constant WAIT_TIMEOUT ^
   --library Kernel32
+
+C:\Software\jextract-25\bin\jextract ^
+  --output ..\src\main\java ^
+  --target-package com.microsoft.win32 ^
+  "<sddl.h>" ^
+  --include-function ConvertStringSecurityDescriptorToSecurityDescriptorW ^
+  --include-struct SECURITY_ATTRIBUTES ^
+  --library Advapi32
+  

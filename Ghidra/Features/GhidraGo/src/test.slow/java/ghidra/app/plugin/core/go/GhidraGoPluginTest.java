@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,8 +27,7 @@ import org.junit.*;
 import docking.AbstractErrDialog;
 import ghidra.GhidraApplicationLayout;
 import ghidra.GhidraGo;
-import ghidra.app.plugin.core.go.ipc.CheckForFileProcessedRunnable;
-import ghidra.app.plugin.core.go.ipc.CheckForListenerRunnable;
+import ghidra.framework.main.FrontEndTool;
 import ghidra.framework.model.*;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.protocol.ghidra.GhidraURL;
@@ -43,7 +42,7 @@ public class GhidraGoPluginTest extends AbstractGhidraHeadedIntegrationTest {
 	private final static String ACTIVE_PROJECT = "active";
 	private final static String INACTIVE_PROJECT = "inactive";
 	private TestEnv env;
-	private PluginTool tool;
+	private FrontEndTool tool;
 	private GhidraGo ghidraGo;
 	private Project inactiveProject;
 
@@ -74,14 +73,6 @@ public class GhidraGoPluginTest extends AbstractGhidraHeadedIntegrationTest {
 
 		// initialize GhidraGo client
 		ghidraGo = new GhidraGo();
-
-		CheckForFileProcessedRunnable.WAIT_FOR_PROCESSING_DELAY_MS = 1000;
-		CheckForFileProcessedRunnable.MAX_WAIT_FOR_PROCESSING_MIN = 1;
-		CheckForFileProcessedRunnable.WAIT_FOR_PROCESSING_PERIOD_MS = 10;
-
-		CheckForListenerRunnable.WAIT_FOR_LISTENER_DELAY_MS = 1000;
-		CheckForListenerRunnable.MAX_WAIT_FOR_LISTENER_MIN = 1;
-		CheckForListenerRunnable.WAIT_FOR_LISTENER_PERIOD_MS = 10;
 	}
 
 	private void addProgramAndFolderToProject(Project p) throws Exception {

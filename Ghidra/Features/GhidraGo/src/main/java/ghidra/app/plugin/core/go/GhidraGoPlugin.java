@@ -15,14 +15,16 @@
  */
 package ghidra.app.plugin.core.go;
 
-import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 
+import ghidra.GhidraGo;
 import ghidra.app.CorePluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
-import ghidra.app.plugin.core.go.ipc.GhidraGoListener;
+import ghidra.framework.Application;
 import ghidra.framework.client.ClientUtil;
 import ghidra.framework.main.*;
+import ghidra.framework.model.Project;
 import ghidra.framework.plugintool.*;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.framework.protocol.ghidra.GhidraURL;
@@ -34,85 +36,101 @@ import ghidra.util.Swing;
 	category = PluginCategoryNames.COMMON,
 	status = PluginStatus.UNSTABLE,
 	packageName = CorePluginPackage.NAME,
-	shortDescription = "Listens for new GhidraURL's to launch using FrontEndTool's" +
-		" accept method",
-	description = "Polls the ghidraGo directory for any URL files written by the " +
-		"GhidraGoSender and processes them in Ghidra",
-	eventsConsumed = {ProjectPluginEvent.class})
+	shortDescription = "Listens for ghidraGo URLs",
+	description =
+			"Accepts ghidraGo URLs sent via named pipe IPC to activate the specified content," +
+			"sent via the ghidraGo launch script",
+	eventsConsumed = { ProjectPluginEvent.class })
 //@formatter:on
-/**
- * Polls the ghidraGo directory located in the user's temporary directory for any url files written
- * by the {@link GhidraGoSender} and processes them in Ghidra.
- */
 public class GhidraGoPlugin extends Plugin implements ApplicationLevelOnlyPlugin {
-	private GhidraGoListener listener;
+	private NamedPipe pipe;
+	private NamedPipeServer pipeServer;
 
 	public GhidraGoPlugin(PluginTool tool) {
 		super(tool);
+		pipe = GhidraGo.getGhidraGoNamedPipe(Application.getApplicationLayout());
 	}
 
 	@Override
 	protected void dispose() {
-		projectClosed();
-		super.dispose();
+		releasePipe();
 	}
 
-	private void processUrl(URL url) {
-		
-		FrontEndTool frontEndTool = AppInfo.getFrontEndTool();
+	@Override
+	public void processEvent(PluginEvent event) {
+		if (event instanceof ProjectPluginEvent ppe) {
+			Project proj = ppe.getProject();
+			if (proj == null) {
+				releasePipe();
+			}
+			else {
+				startListening();
+			}
+		}
+	}
 
+	public void releasePipe() {
+		if (pipeServer != null) {
+			pipeServer.close();
+			pipeServer = null;
+		}
+	}
+
+	public void startListening() {
+		if (pipeServer != null) {
+			return; // skip, already listening
+		}
+		Msg.info(this, "Starting GhidraGo Listener");
+		pipeServer = pipe.createServer(this::handleMessageFromNamedPipe);
+		pipeServer.start(Duration.ZERO);
+	}
+
+	private void handleMessageFromNamedPipe(String msg) {
 		try {
+			URL url = convertStringToURL(msg);
+
 			URL projectUrl = GhidraURL.getProjectURL(url);
 
 			// Check for case where remote server access has already been blocked to 
 			// launching tool and then failing to access program. 
 			if (!GhidraURL.isLocalURL(url) && !ClientUtil.getAllowListProvider().isAllowed(url)) {
-				Msg.showError(this, frontEndTool.getActiveWindow(), "URL Access Not Allowed",
+				Msg.showError(this, tool.getActiveWindow(), "URL Access Not Allowed",
 					"Access denied by Server Allow List:\n" + projectUrl);
 				return;
 			}
 
-			Msg.info(this, "GhidraGo accepting the resource at " + projectUrl);
+			Swing.runLater(() -> {
+				FrontEndTool frontEndTool = AppInfo.getFrontEndTool();
+				frontEndTool.toFront();
+				frontEndTool.accept(url);
+			});
 		}
-		catch (Exception e) {
-			Msg.showError(this, frontEndTool.getActiveWindow(), "GhidraGo Failed",
-				"GhidraGo rejected invalid URL: " + url);
-			return;
+		catch (IllegalArgumentException e) {
+			Msg.error(this, "Bad GhidraGo message [%s]".formatted(msg), e);
 		}
-
-		Swing.runLater(() -> {
-			frontEndTool.toFront();
-			frontEndTool.accept(url);
-		});
 	}
 
-	private void projectOpened() {
-		projectClosed();
+	private URL convertStringToURL(String s) throws IllegalArgumentException {
 		try {
-			listener = new GhidraGoListener((url) -> processUrl(url));
-		}
-		catch (IOException e) {
-			Msg.showError(this, null, "GhidraGoPlugin Exception",
-				"Unable to create GhidraGoListener", e);
-		}
-	}
-
-	private void projectClosed() {
-		if (this.listener != null) {
-			listener.dispose();
-			listener = null;
-		}
-	}
-
-	@Override
-	public void processEvent(PluginEvent event) {
-		if (event instanceof ProjectPluginEvent) {
-			if (((ProjectPluginEvent) event).getProject() == null) {
-				projectClosed();
+			if (s.startsWith(GhidraURL.PROTOCOL + ":?")) {
+				String projectFilePath = s.substring(s.indexOf("?") + 1);
+				if (!projectFilePath.startsWith("/")) {
+					projectFilePath = "/" + projectFilePath;
+				}
+				return GhidraURL.makeURL(AppInfo.getActiveProject().getProjectLocator(),
+					projectFilePath, null);
 			}
-			else {
-				projectOpened();
+			return GhidraURL.toURL(s);
+
+		}
+		catch (IllegalArgumentException e) {
+			if (s.startsWith(GhidraURL.PROTOCOL + "://") || AppInfo.getActiveProject() == null) {
+				throw e;
 			}
+			if (!s.startsWith("/")) {
+				s = "/" + s;
+			}
+			return GhidraURL.makeURL(AppInfo.getActiveProject().getProjectLocator(), s, null);
 		}
 	}
 

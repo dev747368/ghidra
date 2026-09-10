@@ -18,9 +18,11 @@ package ghidra.framework.main;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Set;
 
 import ghidra.framework.model.*;
+import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.protocol.ghidra.GhidraURLQuery.LinkFileControl;
 import ghidra.framework.protocol.ghidra.GhidraURLQueryTask;
 import ghidra.util.Msg;
@@ -29,12 +31,14 @@ import ghidra.util.task.TaskMonitor;
 
 public class AcceptUrlContentTask extends GhidraURLQueryTask {
 
+	private FrontEndTool tool;
 	private FrontEndPlugin plugin;
 
 	public AcceptUrlContentTask(URL url, boolean followExternalLinks, FrontEndPlugin plugin) {
 		super("Accepting URL", url, null, followExternalLinks ? LinkFileControl.FOLLOW_EXTERNAL
 				: LinkFileControl.FOLLOW_INTERNAL);
 		this.plugin = plugin;
+		this.tool = plugin.getFrontEndTool();
 	}
 
 	private boolean isSameLocalProject(ProjectLocator projectLoc1, ProjectLocator projectLoc2) {
@@ -85,9 +89,52 @@ public class AcceptUrlContentTask extends GhidraURLQueryTask {
 				}
 			}
 			else {
-				AppInfo.getFrontEndTool().getToolServices().launchDefaultToolWithURL(url);
+				Set<URL> targetURLs = new HashSet<>();
+				targetURLs.add(domainFile.getSharedProjectURL(null));
+				targetURLs.add(domainFile.getLocalProjectURL(null));
+				targetURLs.remove(null);
+
+				for (PluginTool runningTool : activeProject.getToolManager().getRunningTools()) {
+					for (DomainFile activeDF : runningTool.getDomainFiles()) {
+						Set<URL> activeDfURLs = new HashSet<>();
+						activeDfURLs.add(activeDF.getSharedProjectURL(null));
+						activeDfURLs.add(activeDF.getLocalProjectURL(null));
+						activeDfURLs.remove(null);
+						if (activeDfURLs.removeAll(targetURLs)) {
+							runningTool.accept(url);
+							return; // success, reuse already opened file to accept the URL
+						}
+					}
+				}
+
+				if (tool.getDefaultLaunchMode() == DefaultLaunchMode.REUSE_TOOL) {
+					for (PluginTool runningTool : activeProject.getToolManager()
+							.getRunningTools()) {
+						if (isSupportedDomainFile(runningTool, domainFile)) {
+							runningTool.accept(url);
+							return; // success, we re-used an already open tool to open the file
+						}
+					}
+				}
+
+				tool.getToolServices().launchDefaultToolWithURL(url);
 			}
 		});
+	}
+
+	private boolean isSupportedDomainFile(PluginTool tool, DomainFile file) {
+		if (file == null) {
+			return false;
+		}
+
+		Class<?> c = file.getDomainObjectClass();
+		Class<?>[] classes = tool.getSupportedDataTypes();
+		for (Class<?> element : classes) {
+			if (element.isAssignableFrom(c)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override

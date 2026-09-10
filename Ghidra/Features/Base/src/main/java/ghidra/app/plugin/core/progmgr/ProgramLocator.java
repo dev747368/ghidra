@@ -17,7 +17,7 @@ package ghidra.app.plugin.core.progmgr;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Objects;
+import java.util.*;
 
 import ghidra.framework.data.DomainFileProxy;
 import ghidra.framework.model.*;
@@ -202,6 +202,40 @@ public class ProgramLocator {
 		return Objects.equals(domainFile, other.domainFile) &&
 			Objects.equals(normalizedGhidraURL, other.normalizedGhidraURL) &&
 			version == other.version;
+	}
+
+	public boolean isEquivalent(ProgramLocator other) {
+		return isSameProgram(other) && version == other.version;
+	}
+
+	public boolean isSameProgram(ProgramLocator other) {
+		if (this == other) {
+			return true;
+		}
+		if (other == null) {
+			return false;
+		}
+		if (domainFile != null && Objects.equals(domainFile, other.domainFile)) {
+			return true;
+		}
+
+		Set<URL> myURLs = new HashSet<>();
+		myURLs.add(normalizedGhidraURL);
+		if (domainFile != null) {
+			myURLs.add(domainFile.getLocalProjectURL(null));
+			myURLs.add(domainFile.getSharedProjectURL(null));
+		}
+		myURLs.remove(null);
+
+		Set<URL> otherURLs = new HashSet<>();
+		otherURLs.add(other.normalizedGhidraURL);
+		if (other.domainFile != null) {
+			otherURLs.add(other.domainFile.getLocalProjectURL(null));
+			otherURLs.add(other.domainFile.getSharedProjectURL(null));
+		}
+		otherURLs.remove(null);
+
+		return myURLs.removeAll(otherURLs); // if any urls are same, return true
 	}
 
 }

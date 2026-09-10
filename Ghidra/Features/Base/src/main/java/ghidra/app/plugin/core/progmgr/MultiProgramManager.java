@@ -394,7 +394,7 @@ class MultiProgramManager implements TransactionListener {
 
 	Program getOpenProgram(ProgramLocator programLocator) {
 		for (ProgramInfo info : programMap.values()) {
-			if (info.getProgramLocator().equals(programLocator)) {
+			if (info.getProgramLocator().isEquivalent(programLocator)) {
 				return info.program;
 			}
 		}

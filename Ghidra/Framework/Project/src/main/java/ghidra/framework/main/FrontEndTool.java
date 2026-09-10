@@ -137,6 +137,8 @@ public class FrontEndTool extends PluginTool implements OptionsChangeListener {
 	private WindowListener windowListener;
 	private DockingAction configureToolAction;
 
+	private ApplicationPidFile appPid;
+
 	/**
 	 * Construct a new Ghidra Project Window.
 	 *
@@ -145,6 +147,14 @@ public class FrontEndTool extends PluginTool implements OptionsChangeListener {
 	public FrontEndTool(ProjectManager pm) {
 		super(null, pm, null, null /*tool template*/, false, false, false);
 		setToolName("Project Window");
+
+		try {
+			appPid = ApplicationPidFile.forThisProcess(Application.getApplicationLayout());
+		}
+		catch (IOException e) {
+			Msg.error(this, "Failed to create application pid file: " + e.getMessage());
+			// Not having a pid file won't negatively affect us, so its safe to continue 
+		}
 
 		listeners = WeakDataStructureFactory.createCopyOnWriteWeakSet();
 
@@ -175,6 +185,12 @@ public class FrontEndTool extends PluginTool implements OptionsChangeListener {
 		if (logWindow != null) {
 			logWindow.dispose();
 		}
+
+		if (appPid != null) {
+			appPid.close();
+			appPid = null;
+		}
+
 		shutdown();
 	}
 
