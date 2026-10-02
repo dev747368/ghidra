@@ -13,19 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply from: "$rootProject.projectDir/gradle/distributableGhidraModule.gradle"
-apply from: "$rootProject.projectDir/gradle/javaProject.gradle"
-apply from: "$rootProject.projectDir/gradle/jacocoProject.gradle"
-apply from: "$rootProject.projectDir/gradle/javaTestProject.gradle"
-apply from: "$rootProject.projectDir/gradle/helpProject.gradle"
-apply plugin: 'eclipse'
-
-eclipse.project.name = 'Features GhidraGo'
-
-dependencies {
-	api project(':Base')
-	api project(':Generic')
-	api project(':Project')
-	api project(':Pty')
-}
-
+#include <Windows.h>
+#include <sddl.h>

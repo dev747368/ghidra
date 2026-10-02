@@ -15,8 +15,12 @@
  */
 package ghidra.app.plugin.core.go;
 
-import java.io.*;
-import java.nio.channels.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
@@ -43,7 +47,7 @@ public abstract class NamedPipe {
 	 */
 	public static NamedPipe newGlobalConfigPipe(String pipeName, File globalConfigDir) {
 		File pipeFile = OperatingSystem.CURRENT_OPERATING_SYSTEM == OperatingSystem.WINDOWS
-				? new File("\\\\.\\pipe\\ghidra_namedpipe_" + pipeName)
+				? WinNamedPipe.createPipeFilepath("ghidra_namedpipe_" + pipeName)
 				: new File(globalConfigDir, pipeName);
 
 		File lockFile = new File(globalConfigDir, pipeName + ".lock");

@@ -17,7 +17,7 @@ package ghidra;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -30,7 +30,9 @@ import ghidra.app.plugin.core.go.NamedPipe;
 import ghidra.framework.*;
 import ghidra.framework.main.ApplicationPidFile;
 import ghidra.framework.protocol.ghidra.GhidraURL;
-import ghidra.util.*;
+import ghidra.util.Msg;
+import ghidra.util.Swing;
+import ghidra.util.SystemUtilities;
 import ghidra.util.exception.TimeoutException;
 import utility.application.ApplicationLayout;
 
@@ -67,7 +69,7 @@ public class GhidraGo implements GhidraLaunchable {
 	 */
 	@Override
 	public void launch(GhidraApplicationLayout layout, String[] args) throws Exception {
-		if (args == null || args.length == 0) {
+		if (args == null || args.length == 0 || args[0].isBlank()) {
 			usage(null);
 			return;
 		}
@@ -75,10 +77,11 @@ public class GhidraGo implements GhidraLaunchable {
 		ghidra.framework.protocol.ghidra.Handler.registerHandler();
 		URL ghidraUrl;
 		try {
-			ghidraUrl = new URI(args[0]).toURL();
+			ghidraUrl = GhidraURL.toURL(args[0]);
+			//ghidraUrl = new URI(args[0]).toURL();
 			GhidraURL.getProjectURL(ghidraUrl); // perform Ghidra URL validation only
 		}
-		catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
+		catch (IllegalArgumentException e) {
 			usage("Bad URL: " + args[0]);
 			return;
 		}

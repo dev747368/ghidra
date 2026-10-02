@@ -17,7 +17,7 @@
 @echo off
 :: After extraction, manual edits are required to implement the captureState for LastError
 
-C:\Software\jextract-25\bin\jextract ^
+call C:\Software\jextract-25\bin\jextract ^
   --output ..\src\main\java ^
   --target-package com.microsoft.win32 ^
   win32.h ^
@@ -25,12 +25,14 @@ C:\Software\jextract-25\bin\jextract ^
   --include-function CloseHandle ^
   --include-function ClosePseudoConsole ^
   --include-function ConnectNamedPipe ^
-  --include-function CreateNamedPipe ^
+  --include-function CreateNamedPipeW ^
   --include-function CreatePipe ^
+  --include-function CreateFileW ^
   --include-function CreateJobObjectW ^
   --include-function CreateProcessW ^
   --include-function CreatePseudoConsole ^
   --include-function DisconnectNamedPipe ^
+  --include-function SetNamedPipeHandleState ^
   --include-function FlushFileBuffers ^
   --include-function FormatMessageW ^
   --include-function GetExitCodeProcess ^
@@ -41,7 +43,7 @@ C:\Software\jextract-25\bin\jextract ^
   --include-function TerminateJobObject ^
   --include-function UpdateProcThreadAttribute ^
   --include-function WaitForSingleObject ^
-  --include-function WaitNamedPipe ^
+  --include-function WaitNamedPipeW ^
   --include-function WriteFile ^
   --include-struct _COORD ^
   --include-struct _PROCESS_INFORMATION ^
@@ -69,13 +71,25 @@ C:\Software\jextract-25\bin\jextract ^
   --include-constant WAIT_FAILED ^
   --include-constant WAIT_OBJECT_0 ^
   --include-constant WAIT_TIMEOUT ^
+  --include-constant GENERIC_WRITE ^
+  --include-constant OPEN_EXISTING ^
+  --include-constant PIPE_READMODE_MESSAGE ^
+  --include-constant PIPE_ACCESS_DUPLEX ^
+  --include-constant PIPE_TYPE_MESSAGE ^
+  --include-constant PIPE_WAIT ^
+  --include-constant PIPE_UNLIMITED_INSTANCES ^
+  --include-constant ERROR_NO_DATA ^
+  --include-constant ERROR_INVALID_HANDLE ^
+  --include-constant INVALID_HANDLE_VALUE ^
+  --include-constant ERROR_SEM_TIMEOUT ^
   --library Kernel32
 
-C:\Software\jextract-25\bin\jextract ^
+call C:\Software\jextract-25\bin\jextract ^
   --output ..\src\main\java ^
   --target-package com.microsoft.win32 ^
-  "<sddl.h>" ^
+  win32_sddl.h ^
   --include-function ConvertStringSecurityDescriptorToSecurityDescriptorW ^
-  --include-struct SECURITY_ATTRIBUTES ^
+  --include-struct _SECURITY_ATTRIBUTES ^
+  --include-constant SECURITY_DESCRIPTOR_REVISION ^
   --library Advapi32
   

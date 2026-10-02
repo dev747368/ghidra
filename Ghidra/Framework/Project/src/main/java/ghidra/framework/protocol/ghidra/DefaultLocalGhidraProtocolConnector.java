@@ -23,7 +23,9 @@ import ghidra.framework.client.NotConnectedException;
 import ghidra.framework.client.RepositoryAdapter;
 import ghidra.framework.data.DefaultProjectData;
 import ghidra.framework.main.AppInfo;
-import ghidra.framework.model.*;
+import ghidra.framework.model.Project;
+import ghidra.framework.model.ProjectData;
+import ghidra.framework.model.ProjectLocator;
 import ghidra.framework.protocol.ghidra.GhidraURLConnection.StatusCode;
 import ghidra.framework.store.LockException;
 import ghidra.util.NotOwnerException;
@@ -74,7 +76,7 @@ public class DefaultLocalGhidraProtocolConnector extends GhidraProtocolConnector
 	@Override
 	protected String parseItemPath() throws MalformedURLException {
 
-		String path = url.getQuery();
+		String path = uri.getQuery();
 
 		initFolderItemPath(path);
 

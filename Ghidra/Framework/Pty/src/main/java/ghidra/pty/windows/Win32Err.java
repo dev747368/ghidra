@@ -39,6 +39,10 @@ public interface Win32Err {
 		}
 	}
 
+	static int getLastError(MemorySegment cs) {
+		return (int) LASTERROR.get(cs, 0);
+	}
+
 	static String formatMessage(int lastError) {
 		try (Arena arena = Arena.ofConfined()) {
 			MemorySegment pBuf = arena.allocate(win32_h.LPWSTR);

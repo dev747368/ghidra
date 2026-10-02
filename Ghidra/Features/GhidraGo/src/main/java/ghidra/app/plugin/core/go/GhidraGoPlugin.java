@@ -15,6 +15,8 @@
  */
 package ghidra.app.plugin.core.go;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 
@@ -23,7 +25,9 @@ import ghidra.app.CorePluginPackage;
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.framework.Application;
 import ghidra.framework.client.ClientUtil;
-import ghidra.framework.main.*;
+import ghidra.framework.main.AppInfo;
+import ghidra.framework.main.ApplicationLevelOnlyPlugin;
+import ghidra.framework.main.FrontEndTool;
 import ghidra.framework.model.Project;
 import ghidra.framework.plugintool.*;
 import ghidra.framework.plugintool.util.PluginStatus;

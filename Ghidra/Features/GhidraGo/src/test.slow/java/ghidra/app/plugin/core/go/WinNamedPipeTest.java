@@ -19,10 +19,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
@@ -32,18 +31,18 @@ import org.junit.Test;
 
 import generic.test.AbstractGenericTest;
 import ghidra.framework.OperatingSystem;
-import utilities.util.FileUtilities;
 
-public class UnixNamedPipeTest extends AbstractGenericTest {
+public class WinNamedPipeTest extends AbstractGenericTest {
 
 	File tmpDir;
 	NamedPipe np;
 
 	@Before
 	public void setUp() throws IOException {
-		assumeFalse(OperatingSystem.CURRENT_OPERATING_SYSTEM == OperatingSystem.WINDOWS);
+		assumeTrue(OperatingSystem.CURRENT_OPERATING_SYSTEM == OperatingSystem.WINDOWS);
 		tmpDir = createTempDirectory("namedpipes");
-		np = NamedPipe.newPipe(new File(tmpDir, "namedpipe"), new File(tmpDir, "namedpipe.lock"));
+		np = new WinNamedPipe(WinNamedPipe.createPipeFilepath("namedpipe"),
+			new File(tmpDir, "namedpipe.lock"));
 	}
 
 	@Test(timeout = 5000)
@@ -53,7 +52,7 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 			np.writeMessage("test message", null);
 			fail();
 		}
-		catch (FileNotFoundException e) {
+		catch (IOException e) {
 			// good
 		}
 	}
@@ -67,13 +66,20 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 
 		assertFalse(np.hasListener());
 
-		np.writeMessage("test message", null);
-		Thread.sleep(1000); // hacky but necessary since we're testing a shutdown/closed listener
+		try {
+			np.writeMessage("test message", null);
+			fail();
+		}
+		catch (IOException e) {
+			// good
+		}
 
+		Thread.sleep(1000); // hacky but necessary since we're testing a shutdown/closed listener
 		assertTrue(receivedMessages.isEmpty());
+
 	}
 
-	@Test(timeout = 10000)
+	@Test(timeout = 30000)
 	public void testSendRecv() throws InterruptedException {
 		// Use several threads to spam writing messages to the named pipe.
 		// Check that all sent messages were received by the server, and vice versa.
@@ -83,7 +89,9 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 			Collections.synchronizedList(new ArrayList<>(spamCount * 3));
 
 		NamedPipeServer nps = np.createServer(s -> receivedMessages.add(s));
-		nps.start(Duration.ofMillis(1000));
+		if (!nps.start(Duration.ofMillis(1000))) {
+			fail();
+		}
 
 		List<String> sentMessages = Collections.synchronizedList(new ArrayList<>(spamCount * 3));
 
@@ -91,7 +99,8 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 		Thread t2 =
 			new Thread(() -> spamMessages(sentMessages, "thread 2 extra longer spam", spamCount));
 		Thread t3 = new Thread(
-			() -> spamMessages(sentMessages, "thread 3 extra extra longer spam", spamCount));
+			() -> spamMessages(sentMessages,
+				"thread 3 extra extra longer spamxxxxxxxxxxxxxxxxxxxxxxxx", spamCount));
 
 		t1.start();
 		t2.start();
@@ -111,18 +120,20 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 				fail("Received a string that was not sent: " + recvdMessage);
 			}
 		}
-
-		sentMessageCopy.removeAll(receivedMessages);
+		Set<String> recvMessagesSet = new HashSet<>(receivedMessages);
+		sentMessageCopy.removeAll(recvMessagesSet);
 
 		assertTrue("Messages sent but not received: " + sentMessageCopy.size(),
 			sentMessageCopy.isEmpty());
+
+		Thread.sleep(10000);
 	}
 
 	private void spamMessages(List<String> sentMessages, String prefix, int count) {
 		for (int i = 0; i < count; i++) {
 			String message = prefix + "%d".formatted(i);
 			try {
-				np.writeMessage(message, null);
+				np.writeMessage(message, Duration.ofMillis(100));
 				sentMessages.add(message);
 			}
 			catch (IOException e) {
@@ -141,10 +152,10 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 			fail();
 		}
 
-		np.writeMessage("X".repeat(UnixNamedPipe.UNIX_MAX_PIPE_MSG_LENGTH), Duration.ZERO);
+		np.writeMessage("X".repeat(WinNamedPipe.WIN_MAX_PIPE_MSG_LENGTH), Duration.ZERO);
 
 		try {
-			np.writeMessage("X".repeat(UnixNamedPipe.UNIX_MAX_PIPE_MSG_LENGTH + 1), Duration.ZERO);
+			np.writeMessage("X".repeat(WinNamedPipe.WIN_MAX_PIPE_MSG_LENGTH + 1), Duration.ZERO);
 			fail();
 		}
 		catch (IOException e) {
@@ -154,38 +165,7 @@ public class UnixNamedPipeTest extends AbstractGenericTest {
 		nps.close();
 
 		assertEquals(1, receivedMessages.size());
-		assertEquals("X".repeat(UnixNamedPipe.UNIX_MAX_PIPE_MSG_LENGTH), receivedMessages.get(0));
+		assertEquals("X".repeat(WinNamedPipe.WIN_MAX_PIPE_MSG_LENGTH), receivedMessages.get(0));
 	}
 
-	@Test
-	public void testMkfifo() throws IOException {
-		File pipe1 = new File(tmpDir, "pipe1");
-		UnixNamedPipeServer.createUnixPipe(pipe1);
-		assertTrue(pipe1.exists() && !pipe1.isFile() && !pipe1.isDirectory());
-	}
-
-	@Test
-	public void testMkfifoErrno_fileexists() throws IOException {
-		File file = new File(tmpDir, "somefile");
-		FileUtilities.writeStringToFile(file, "blah");
-		try {
-			UnixNamedPipeServer.createUnixPipe(file);
-			fail();
-		}
-		catch (IOException e) {
-			assertTrue(e.getMessage().toLowerCase().contains("file exists"));
-		}
-	}
-
-	@Test
-	public void testMkfifoErrno_nosuchfile() {
-		File pipe1 = new File(tmpDir, "badsubdir/pipe1");
-		try {
-			UnixNamedPipeServer.createUnixPipe(pipe1);
-			fail();
-		}
-		catch (IOException e) {
-			assertTrue(e.getMessage().toLowerCase().contains("no such file"));
-		}
-	}
 }

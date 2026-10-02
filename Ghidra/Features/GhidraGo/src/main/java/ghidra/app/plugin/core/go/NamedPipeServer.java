@@ -15,7 +15,9 @@
  */
 package ghidra.app.plugin.core.go;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -85,7 +87,7 @@ public abstract class NamedPipeServer implements Closeable {
 			// Wait indefinitely to get an exclusive lock on the .lock file, indicating that we
 			// are the single owner(reader) of the pipe.
 			NamedPipe.withLock(lockFile, null, () -> {
-				Msg.debug(this, "Pipe lock acquired " + pipeFile);
+				Msg.debug(this, "Pipe lock acquired for " + pipeFile);
 
 				listenerReadLoopMethod();
 

@@ -15,7 +15,9 @@
  */
 package ghidra.app.plugin.core.go;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
@@ -31,7 +33,7 @@ import ghidra.pty.unix.UnixErr;
 import ghidra.util.Msg;
 
 /**
- * Unix named pipe server / listener.  Uses JNA to be able to call mkfifo.
+ * Unix named pipe server / listener.  Uses java native to be able to call mkfifo.
  */
 public class UnixNamedPipeServer extends NamedPipeServer {
 	private static final int MAX_RECV_BUFFER = UnixNamedPipe.UNIX_RAW_MAX_PIPE_MSG_LENGTH * 2;
