@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 
 import com.microsoft.win32._SECURITY_ATTRIBUTES;
 import com.microsoft.win32.win32_h;
-import com.microsoft.win32.win32_sddl_h;
 
 import ghidra.app.plugin.core.go.NamedPipe.MessageConsumer;
 import ghidra.pty.windows.Handle;
@@ -82,20 +81,22 @@ public class WinNamedPipeServer extends NamedPipeServer {
 				createSecurityAttributesFromSddl(arena, cs, "D:(A;;FRFWFXSD;;;OW)");
 
 			try {
-				//@formatter:off
-				MemorySegment createPipeResult = win32_h.CreateNamedPipeW(cs,
-					lpName,
-					win32_h.PIPE_ACCESS_DUPLEX(),
-					win32_h.PIPE_TYPE_MESSAGE() | win32_h.PIPE_READMODE_MESSAGE() | win32_h.PIPE_WAIT(),
-					win32_h.PIPE_UNLIMITED_INSTANCES(),
-					4096,
-					4096,
-					0,
-					secAttrs.getMemorySegment() );
-				//@formatter:on
 
-				if (createPipeResult.address() == 0 ||
-					createPipeResult.address() == win32_h.INVALID_HANDLE_VALUE_RAW) {
+				MemorySegment createPipeResult = win32_h.CreateNamedPipeW(
+					cs,                                 // for last error
+					lpName,                             // lpName - must be UTF16LE
+					win32_h.PIPE_ACCESS_DUPLEX(),       // dwOpenMode
+					win32_h.PIPE_TYPE_MESSAGE() | win32_h.PIPE_READMODE_MESSAGE() |
+						win32_h.PIPE_WAIT(),            // dwPipeMode
+					win32_h.PIPE_UNLIMITED_INSTANCES(), // nMaxInstances
+					4096,                               // nOutBufferSize
+					4096,                               // nInBufferSize
+					0,                                  // nDefaultTimeOut
+					secAttrs.getMemorySegment()         // lpSecurityAttributes
+				);
+
+				if (createPipeResult.address() == MemorySegment.NULL.address() ||
+					createPipeResult.address() == win32_h.INVALID_HANDLE_VALUE().address()) {
 					int lastError = Win32Err.getLastError(cs);
 					throw new IOException("Unable to create named pipe %s, error=%d (%s)"
 							.formatted(pipeFile, lastError, Win32Err.formatMessage(lastError)));
@@ -119,8 +120,15 @@ public class WinNamedPipeServer extends NamedPipeServer {
 					}
 				}
 
-				int bReadSuccess = win32_h.ReadFile(cs, handle.asSegment(), winbuffer,
-					javabuffer.length, dwBytesRead, MemorySegment.NULL);
+				int bReadSuccess = win32_h.ReadFile(
+					cs,                  // for last error 
+					handle.asSegment(),  // hFile
+					winbuffer,           // lpBuffer
+					javabuffer.length,   // nNumberOfBytesToRead
+					dwBytesRead,         // Out: ptr to dword - lpNumberOfBytesRead
+					MemorySegment.NULL   // lpOverlapped - N/A
+				);
+
 				if (bReadSuccess == 0) {
 					int lastError = Win32Err.getLastError(cs);
 					if (lastError != win32_h.ERROR_BROKEN_PIPE() &&
@@ -158,13 +166,13 @@ public class WinNamedPipeServer extends NamedPipeServer {
 		MemorySegment sddlStringPtr = arena.allocateFrom(sddl, StandardCharsets.UTF_16LE);
 		MemorySegment ppSecurityDescriptor = arena.allocate(ValueLayout.ADDRESS);
 
-		//@formatter:off
-		if (win32_sddl_h.ConvertStringSecurityDescriptorToSecurityDescriptorW(cs,
-			sddlStringPtr,
-			win32_sddl_h.SECURITY_DESCRIPTOR_REVISION(),
-			ppSecurityDescriptor,
-			MemorySegment.NULL) == 0) {
-		//@formatter:on
+		if (win32_h.ConvertStringSecurityDescriptorToSecurityDescriptorW(
+			cs,                                         // for last error
+			sddlStringPtr,                              // StringSecurityDescriptor, must be UTF-16LE
+			win32_h.SECURITY_DESCRIPTOR_REVISION(),     // StringSDRevision
+			ppSecurityDescriptor,                       // Out: ptr to ptr to SecurityDescriptor
+			MemorySegment.NULL                          // Out: SecurityDescriptorSize, dont care
+		) == 0) {
 			int lastError = Win32Err.getLastError(cs);
 			throw new IOException("SDDL conversion failed: %d (%s)".formatted(lastError,
 				Win32Err.formatMessage(lastError)));

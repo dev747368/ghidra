@@ -16,3 +16,4 @@
 #include <Windows.h>
 #include <WinCon.h>
 #include <ConsoleApi.h>
+#include <sddl.h>

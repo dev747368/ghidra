@@ -49,6 +49,7 @@ public class WinNamedPipe extends NamedPipe {
 	@Override
 	public boolean pipeObjectExists() {
 		try (Arena arena = Arena.ofConfined()) {
+			// don't care about lasterror because we are only testing presence of pipe object
 			MemorySegment cs = arena.allocate(Win32Err.LAYOUT);
 			return win32_h.WaitNamedPipeW(cs,
 				arena.allocateFrom(pipeFile.getPath(), StandardCharsets.UTF_16LE),
@@ -98,33 +99,45 @@ public class WinNamedPipe extends NamedPipe {
 					continue;
 				}
 
-				//@formatter:off
-				MemorySegment createFileResults = win32_h.CreateFileW(cs, 
-					lpName,
-					win32_h.GENERIC_WRITE(),
-					0,
-					MemorySegment.NULL,
-					win32_h.OPEN_EXISTING(),
-					0,
-					MemorySegment.NULL);
-				//@formatter:on
+				MemorySegment createFileResults = win32_h.CreateFileW(
+					cs,                           // for lasterror 
+					lpName,                       // lpFileName, must be UTF16LE
+					win32_h.GENERIC_WRITE(),      // dwDesiredAccess
+					0,                            // dwShareMode
+					MemorySegment.NULL,           // lpSecurityAttributes - N/A
+					win32_h.OPEN_EXISTING(),      // dwCreationDisposition
+					0,                            // dwFlagsAndAttributes
+					MemorySegment.NULL            // hTemplateFile - N/A
+				);
 
-				if (createFileResults.address() == 0 ||
-					createFileResults.address() == win32_h.INVALID_HANDLE_VALUE_RAW) {
+				if (createFileResults.address() == MemorySegment.NULL.address() ||
+					createFileResults.address() == win32_h.INVALID_HANDLE_VALUE().address()) {
+					// don't care about lasterror, file didn't exist or other error, try again
 					continue;
 				}
 
 				try (Handle handle = new Handle(createFileResults)) {
 					dwMode.set(win32_h.DWORD, 0, win32_h.PIPE_READMODE_MESSAGE());
-					if (win32_h.SetNamedPipeHandleState(cs, handle.asSegment(), dwMode,
-						MemorySegment.NULL, MemorySegment.NULL) == 0) {
+					if (win32_h.SetNamedPipeHandleState(
+						cs,                    // for last error
+						handle.asSegment(),    // hNamedPipe
+						dwMode,                // lpMode
+						MemorySegment.NULL,    // lpMaxCollectionCount - N/A
+						MemorySegment.NULL     // lpCollectDataTimeout - N/A
+					) == 0) {
 						int lastError = Win32Err.getLastError(cs);
 						throw new IOException("Unable to set named pipe mode, error=%d (%s)"
 								.formatted(lastError, Win32Err.formatMessage(lastError)));
 					}
 
-					if (win32_h.WriteFile(cs, handle.asSegment(), buf, messageBytes.length,
-						dwBytesWritten, MemorySegment.NULL) == 0) {
+					if (win32_h.WriteFile(
+						cs,                        // for lasterror
+						handle.asSegment(),        // hFile
+						buf,                       // lpBuffer
+						messageBytes.length,       // nNumberOfBytesToWrite
+						dwBytesWritten,            // Out: ptr to lpNumberOfBytesWritten
+						MemorySegment.NULL         // lpOverlapped - N/A
+					) == 0) {
 						int lastError = Win32Err.getLastError(cs);
 						throw new IOException("Write failed, error=%d (%s)".formatted(lastError,
 							Win32Err.formatMessage(lastError)));

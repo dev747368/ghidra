@@ -77,10 +77,10 @@ public class _SECURITY_ATTRIBUTES {
 	}
 
 	private static final GroupLayout LAYOUT = MemoryLayout.structLayout(
-		win32_sddl_h.C_LONG.withName("nLength"),
+		win32_h.C_LONG.withName("nLength"),
 		MemoryLayout.paddingLayout(4),
-		win32_sddl_h.C_POINTER.withName("lpSecurityDescriptor"),
-		win32_sddl_h.C_INT.withName("bInheritHandle"),
+		win32_h.C_POINTER.withName("lpSecurityDescriptor"),
+		win32_h.C_INT.withName("bInheritHandle"),
 		MemoryLayout.paddingLayout(4)).withName("_SECURITY_ATTRIBUTES");
 
 	private static final OfInt nLength_LAYOUT = (OfInt) LAYOUT.select(groupElement("nLength"));
